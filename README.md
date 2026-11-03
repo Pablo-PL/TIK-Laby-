@@ -115,3 +115,5 @@ okolo `1.856844` bajta.
 - Wynik zadania 4 jest teoretycznym oszacowaniem opartym na entropii
   empirycznej. Nie jest to gwarancja rozmiaru konkretnego pliku
   po zastosowaniu rzeczywistego algorytmu kompresji.
+=======
+# TIK - Laboratoria
