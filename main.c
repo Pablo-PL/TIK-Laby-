@@ -1,13 +1,14 @@
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
 
 unsigned char *tablica = NULL;
 size_t ilosc = 0;
 size_t rozmiar = 4;
 size_t licznik[256] = {0};
-double entropia = 0.0;
+double H = 0.0;
 
 int odczyt_zapis(const char *nazwa_pliku)
 {
@@ -18,7 +19,7 @@ int odczyt_zapis(const char *nazwa_pliku)
 
     if (plik == NULL)
     {
-        fprintf(stderr, "Blad: nie mozna otworzyc pliku: %s\n", nazwa_pliku);
+        fprintf(stderr, "Nie mozna otworzyc pliku!\n");
         return 1;
     }
 
@@ -26,7 +27,7 @@ int odczyt_zapis(const char *nazwa_pliku)
 
     if (tablica == NULL)
     {
-        fprintf(stderr, "Blad: nie udalo sie przydzielic pamieci.\n");
+        fprintf(stderr, "Blad alokacji pamieci!\n");
         fclose(plik);
         return 1;
     }
@@ -37,7 +38,7 @@ int odczyt_zapis(const char *nazwa_pliku)
         {
             if (rozmiar > SIZE_MAX / 2)
             {
-                fprintf(stderr, "Blad: przekroczono maksymalny rozmiar tablicy.\n");
+                fprintf(stderr, "Przekroczono limit pamieci!\n");
                 free(tablica);
                 tablica = NULL;
                 fclose(plik);
@@ -50,7 +51,7 @@ int odczyt_zapis(const char *nazwa_pliku)
 
             if (temp == NULL)
             {
-                fprintf(stderr, "Blad: nie udalo sie powiekszyc tablicy.\n");
+                fprintf(stderr, "Blad powiekszania pamieci!\n");
                 free(tablica);
                 tablica = NULL;
                 fclose(plik);
@@ -67,7 +68,7 @@ int odczyt_zapis(const char *nazwa_pliku)
 
     if (ferror(plik))
     {
-        fprintf(stderr, "Blad: wystapil blad podczas odczytu pliku.\n");
+        fprintf(stderr, "Blad odczytu pliku!\n");
         free(tablica);
         tablica = NULL;
         fclose(plik);
@@ -76,7 +77,7 @@ int odczyt_zapis(const char *nazwa_pliku)
 
     if (fclose(plik) != 0)
     {
-        fprintf(stderr, "Blad: nie udalo sie poprawnie zamknac pliku.\n");
+        fprintf(stderr, "Blad zamykania pliku!\n");
         free(tablica);
         tablica = NULL;
         return 1;
@@ -85,7 +86,7 @@ int odczyt_zapis(const char *nazwa_pliku)
     return 0;
 }
 
-void z1(void)
+void z1()
 {
     printf("\n");
     printf("========================================\n");
@@ -95,88 +96,72 @@ void z1(void)
     printf("Rozmiar pliku: %zu bajtow\n", ilosc);
 }
 
-void z2(void)
+void z2()
 {
     printf("\n");
     printf("========================================\n");
     printf("              ZADANIE 2.\n");
     printf("========================================\n");
 
-    printf("Wystapienia poszczegolnych bajtow:\n");
+    int rozne = 0;
 
     for (int i = 0; i < 256; i++)
     {
         if (licznik[i] > 0)
         {
-            printf("0x%02X : %zu\n", i, licznik[i]);
+            rozne++;
         }
     }
+
+    printf("Liczba roznych wartosci bajtow: %d\n", rozne);
 }
 
-void z3(void)
+void z3()
 {
     printf("\n");
     printf("========================================\n");
     printf("              ZADANIE 3.\n");
     printf("========================================\n");
 
-    entropia = 0.0;
+    H = 0.0;
 
-    if (ilosc == 0)
+    if (ilosc > 0)
     {
-        printf("Plik jest pusty. Entropia nie jest okreslona.\n");
-        return;
-    }
-
-    for (int i = 0; i < 256; i++)
-    {
-        if (licznik[i] > 0)
+        for (int i = 0; i < 256; i++)
         {
-            double p = (double)licznik[i] / (double)ilosc;
-            entropia -= p * log2(p);
+            if (licznik[i] > 0)
+            {
+                double p = (double)licznik[i] / (double)ilosc;
+                H -= p * log2(p);
+            }
         }
     }
 
-    printf("Entropia H: %.6f bitow/symbol\n", entropia);
+    printf("Entropia H: %.6f bitow/symbol\n", H);
 }
 
-void z4(void)
+void z4()
 {
     printf("\n");
     printf("========================================\n");
     printf("              ZADANIE 4.\n");
     printf("========================================\n");
 
-    if (ilosc == 0)
-    {
-        printf("Plik jest pusty. Nie mozna wyznaczyc rozmiaru na podstawie entropii.\n");
-        return;
-    }
+    double minimalny_rozmiar = ((double)ilosc * H) / 8.0;
 
-    {
-        double minimalny_rozmiar = ((double)ilosc * entropia) / 8.0;
-
-        printf("Teoretyczny minimalny rozmiar po kompresji:\n");
-        printf("n * H / 8 = %zu * %.6f / 8 = %.6f bajtow\n\n", ilosc, entropia, minimalny_rozmiar);
-    }
+    printf("Teoretyczny minimalny rozmiar po kompresji: %.6f bajtow\n",
+           minimalny_rozmiar);
 }
 
 int main(int argc, char *argv[])
 {
-    const char *nazwa_pliku = "dane.txt";
-
-    if (argc > 2)
+    if (argc != 2)
     {
-        fprintf(stderr, "Uzycie: %s [nazwa_pliku]\n", argv[0]);
+        fprintf(stderr, "Uzycie: entropy <plik>\n");
         return 1;
     }
 
-    if (argc == 2)
-    {
-        nazwa_pliku = argv[1];
-    }
-
-    if (odczyt_zapis(nazwa_pliku) != 0)
+    if (odczyt_zapis(argv[1]) != 0)
     {
         return 1;
     }

@@ -3,9 +3,7 @@ CFLAGS = -std=c11 -Wall -Wextra -O2
 LDLIBS = -lm
 
 TARGET = entropy
-SOURCE = main.c
-
-.PHONY: all clean test
+SOURCE = main.c bitio.c
 
 all: $(TARGET)
 
@@ -17,3 +15,5 @@ test: $(TARGET)
 
 clean:
 	rm -f $(TARGET) $(TARGET).exe
+
+.PHONY: all clean test
