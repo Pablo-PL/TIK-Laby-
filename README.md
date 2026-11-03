@@ -1,30 +1,29 @@
 # TIiK – Laboratorium L1
-## Bitowe wejście/wyjście i entropia pliku
+## Wprowadzenie. Bitowe wejście/wyjście i entropia pliku
 
-### Opis projektu
+## Opis projektu
 
 Projekt realizuje zadanie Z1 z laboratorium Teorii Informacji i Kodowania.
 Składa się z programu `entropy`, który analizuje wskazany plik bajt po bajcie,
 oraz modułu `bitio`, który umożliwia zapis i odczyt pojedynczych bitów.
 
-Program jest napisany w języku C w standardzie C11.
+Program napisano w języku C, zgodnie ze standardem C11.
 
 ## 1. Część A – program entropy
 
-Program uruchamia się poleceniem:
+Uruchomienie programu:
 
 ```bash
 entropy <plik>
 ```
 
-W systemie Windows plik wykonywalny może mieć nazwę `entropy.exe`:
+Windows / PowerShell:
 
 ```powershell
 .\entropy.exe dane.txt
 ```
 
-Program odczytuje plik w trybie binarnym (`rb`) i wyświetla:
-
+Program odczytuje plik w trybie binarnym (`rb`) i wypisuje:
 1. rozmiar pliku w bajtach,
 2. liczbę różnych wartości bajtów występujących w pliku,
 3. entropię Shannona `H` w bitach na symbol,
@@ -57,11 +56,7 @@ przez zero.
 
 ## 2. Część B – moduł bitio
 
-Moduł składa się z plików:
-- `bitio.h` – deklaracje struktur i funkcji,
-- `bitio.c` – implementacja funkcji.
-
-Moduł udostępnia struktury `BitWriter` i `BitReader` oraz funkcje:
+Moduł składa się z plików `bitio.h` (deklaracje) i `bitio.c` (implementacja).
 
 ### Zapis bitów
 - `bw_init()` – inicjalizuje zapis do pliku,
@@ -78,7 +73,7 @@ Bity są zapisywane i odczytywane od najstarszego bitu bajtu (MSB first).
 
 ### Ciąg kontrolny
 
-Wymagany ciąg wywołań:
+Wywołania:
 
 ```c
 bw_write_bits(w, 0x5, 3);
@@ -87,7 +82,7 @@ bw_write_bits(w, 0x1, 2);
 bw_flush(w);
 ```
 
-Powinien utworzyć plik o długości 2 bajtów i zawartości:
+powinny utworzyć plik o długości 2 bajtów i zawartości:
 
 ```text
 BF 40
@@ -97,21 +92,57 @@ Ostatni niepełny bajt jest uzupełniany zerami.
 
 ## 3. Część C – testy
 
-Program testowy modułu `bitio` zapisuje ciąg kontrolny, odczytuje zapisane wartości
-i porównuje je z wartościami oczekiwanymi.
+Program testowy modułu `bitio` zapisuje ciąg kontrolny, odczytuje zapisane
+wartości i porównuje je z wartościami oczekiwanymi.
 
-Program `entropy` należy sprawdzić na następujących danych:
+Program `entropy` uruchomiono dla sześciu przypadków wymaganych w instrukcji:
+pustego pliku, 1000 powtórzeń jednego bajtu, tekstu, losowego pliku 1 MiB,
+archiwum ZIP oraz pliku wykonywalnego.
 
-| Plik testowy | Oczekiwany wynik |
-|---|---|
-| Pusty plik | Brak błędu, `H = 0` |
-| 1000 powtórzeń tego samego bajtu | `H = 0` |
-| Tekst w języku polskim, np. kod źródłowy | `H` około 4–5 bit/symbol |
-| Plik losowy o rozmiarze 1 MB | `H` bliska 8 bit/symbol |
-| Archiwum ZIP lub plik JPG | `H` bliska 8 bit/symbol |
-| Plik wykonywalny | `H` wyraźnie mniejsza od 8 bit/symbol |
+### Wyniki pomiarów
 
-Pliki testowe należy zachować, ponieważ będą wykorzystywane w kolejnych zadaniach.
+Wyniki uzyskane w środowisku Windows, dla plików wygenerowanych przez
+`tests/run.ps1`:
+
+| Plik testowy | Rozmiar [B] | Różne bajty | Entropia [bit/symbol] | `n * H / 8` [B] |
+|---|---:|---:|---:|---:|
+| Pusty plik | 0 | 0 | 0,000000 | 0,000000 |
+| 1000 identycznych bajtów | 1 000 | 1 | 0,000000 | 0,000000 |
+| Tekst testowy | 156 | 27 | 4,353715 | 84,897433 |
+| Losowy plik 1 MiB | 1 048 576 | 256 | 7,999836 | 1 048 554,448073 |
+| Archiwum ZIP | 233 | 107 | 5,729002 | 166,857193 |
+| Plik wykonywalny (`entropy.exe`) | 60 826 | 256 | 4,837547 | 36 781,081705 |
+
+### Interpretacja wyników
+
+1. **Pusty plik:** nie zawiera symboli, dlatego program zwraca rozmiar 0,
+   liczbę różnych bajtów 0 i entropię 0. Nie występuje dzielenie przez zero.
+
+2. **1000 identycznych bajtów:** występuje tylko jedna wartość bajtu.
+   Kolejny symbol jest całkowicie przewidywalny, więc entropia wynosi 0.
+
+3. **Tekst testowy:** entropia wynosi około 4,35 bit/symbol. Jest niższa
+   niż 8 bitów/symbol, ponieważ znaki w tekście nie występują z jednakową
+   częstością i pojawiają się powtarzalne wzorce.
+
+4. **Losowy plik 1 MiB:** entropia wynosi około 8 bitów/symbol, a w pliku
+   wystąpiły wszystkie 256 wartości bajtu. Jest to wynik zgodny z oczekiwaniem
+   dla danych o rozkładzie zbliżonym do jednostajnego.
+
+5. **Archiwum ZIP:** uzyskano 5,73 bitów/symbol. Jest to małe archiwum
+   (233 bajty), utworzone z krótkiego tekstu. Nagłówki i niewielki rozmiar
+   próbki mają istotny wpływ na zmierzony rozkład bajtów. Wynik nie musi
+   być bliski 8 bitom/symbol dla tak małego archiwum.
+
+6. **Plik wykonywalny:** entropia wynosi około 4,84 bitów/symbol.
+   Plik zawiera strukturę i powtarzalne elementy, dlatego rozkład wartości
+   bajtów nie jest jednostajny.
+
+Wartość `n * H / 8` jest teoretycznym oszacowaniem dla kodowania
+bezpamięciowego, w którym każdy bajt jest kodowany niezależnie. Nie jest
+gwarancją rozmiaru konkretnego pliku po zastosowaniu rzeczywistego
+algorytmu kompresji. W szczególności nie uwzględnia zależności pomiędzy
+kolejnymi bajtami ani narzutu formatu kompresji.
 
 ## 4. Kompilacja
 
@@ -119,13 +150,13 @@ Wymagane flagi:
 
 `-std=c11 -Wall -Wextra -O2`
 
-Przykładowa kompilacja programu (GCC / MinGW-w64):
+GCC / MinGW-w64:
 
 ```bash
 gcc -std=c11 -Wall -Wextra -O2 main.c bitio.c -o entropy -lm
 ```
 
-W systemie Windows:
+Windows:
 
 ```powershell
 gcc -std=c11 -Wall -Wextra -O2 main.c bitio.c -o entropy.exe -lm
@@ -155,20 +186,23 @@ Program wymaga dokładnie jednego argumentu – ścieżki do analizowanego pliku
 Niepoprawna liczba argumentów lub błąd odczytu powoduje komunikat na `stderr`
 i zakończenie programu niezerowym kodem.
 
-## 6. Testowanie
+## 6. Uruchamianie testów
 
 Test modułu bitowego:
 
 ```powershell
-gcc -std=c11 -Wall -Wextra -O2 test_bitio.c bitio.c -o test_bitio.exe
-.\test_bitio.exe
+gcc -std=c11 -Wall -Wextra -O2 -I. tests/test_bitio.c bitio.c -o tests/test_bitio.exe
+.\tests\test_bitio.exe
 ```
 
-Oczekiwany wynik testu ciągu kontrolnego to dwa bajty `BF 40`, a odczytane
-wartości powinny być równe `0x5`, `0x1F` i `0x1`.
+Testy programu `entropy`:
 
-Testy programu `entropy` należy wykonać dla wszystkich przypadków wymienionych
-w części C.
+```powershell
+powershell -ExecutionPolicy Bypass -File tests\run.ps1
+```
+
+Skrypt tworzy pliki testowe i zapisuje wyniki do
+`tests/wyniki_pomiarow.txt`.
 
 ## 7. Kontrola pamięci
 
@@ -184,29 +218,7 @@ Na Windowsie można użyć Dr. Memory, zgodnie z konfiguracją środowiska:
 drmemory -- entropy.exe dane.txt
 ```
 
-## 8. Wyniki pomiarów
-
-Wyniki należy uzupełnić po uruchomieniu programu na plikach testowych.
-Nie należy wpisywać wartości szacunkowych zamiast rzeczywistych pomiarów.
-
-| Plik testowy | Rozmiar [B] | Różne bajty | Entropia [bit/symbol] | `n * H / 8` [B] |
-|---|---:|---:|---:|---:|
-| Pusty plik | do uzupełnienia | do uzupełnienia | do uzupełnienia | do uzupełnienia |
-| 1000 identycznych bajtów | do uzupełnienia | do uzupełnienia | do uzupełnienia | do uzupełnienia |
-| Tekst polski / kod źródłowy | do uzupełnienia | do uzupełnienia | do uzupełnienia | do uzupełnienia |
-| Losowy plik 1 MB | do uzupełnienia | do uzupełnienia | do uzupełnienia | do uzupełnienia |
-| ZIP lub JPG | do uzupełnienia | do uzupełnienia | do uzupełnienia | do uzupełnienia |
-| Plik wykonywalny | do uzupełnienia | do uzupełnienia | do uzupełnienia | do uzupełnienia |
-
-### Interpretacja wyników
-
-Interpretację należy przygotować na podstawie uzyskanych pomiarów. Zgodnie
-z instrukcją, entropia pliku złożonego z powtórzeń jednego bajtu wynosi zero,
-a entropia danych losowych powinna być bliska 8 bitom na symbol. Dla tekstu
-naturalnego i kodu źródłowego oczekiwana jest zwykle niższa entropia niż dla
-danych losowych lub skompresowanych.
-
-## 9. Wymagania techniczne
+## 8. Wymagania techniczne
 
 - Język C, standard C11.
 - Kompilacja z flagami `-std=c11 -Wall -Wextra -O2`.
@@ -217,12 +229,15 @@ danych losowych lub skompresowanych.
 - Niezerowy kod wyjścia w przypadku błędu.
 - Brak wycieków pamięci.
 
-## 10. Struktura projektu
+## 9. Struktura projektu
 
 ```text
 projekt/
 ├── stderr/
 ├── tests/
+│   ├── test_bitio.c
+│   ├── run.ps1
+│   └── pliki testowe generowane przez skrypt
 ├── bitio.c
 ├── bitio.h
 ├── main.c
