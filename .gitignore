@@ -1,0 +1,5 @@
+program
+program.exe
+*.o
+stderr/*
+!stderr/.gitkeep
